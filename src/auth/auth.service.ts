@@ -10,17 +10,46 @@ import { JwtService } from '@nestjs/jwt';
 
 import { UserModel } from 'src/user/user.model';
 import { AuthDto } from './dto/auth.dto';
+import { RefreshTokenDto } from './dto/refreshToken.dto';
+import { log } from 'console';
+import { ConfigService } from '@nestjs/config';
+import { jwtConstants } from 'src/config/constant';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		@InjectModel(UserModel)
 		private readonly UserModel: ModelType<UserModel>,
-		private readonly jwtService: JwtService
+		private readonly jwtService: JwtService,
+		private readonly configService: ConfigService
 	) {}
 
 	async login(dto: AuthDto) {
 		const user = await this.validateUser(dto);
+
+		const tokens = await this.issueTokenPair(String(user._id));
+
+		//
+		const payload = await this.jwtService.verifyAsync(tokens.accessToken, {
+			secret: jwtConstants.secret,
+		});
+		log(payload);
+		//
+
+		return {
+			user: this.returnUserFields(user),
+			...tokens,
+		};
+	}
+
+	async getNewTokens({ refreshToken }: RefreshTokenDto) {
+		if (!refreshToken) throw new UnauthorizedException('Please sign in!');
+
+		const result = await this.jwtService.verifyAsync(refreshToken);
+		if (!result)
+			throw new UnauthorizedException('Invalide token or expired!');
+
+		const user = await this.UserModel.findById(result._id);
 
 		const tokens = await this.issueTokenPair(String(user._id));
 
