@@ -8,6 +8,7 @@ import { JwtModule, JwtModuleOptions } from '@nestjs/jwt';
 import { getJWTConfig } from 'src/config/jwt.config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { jwtConstants } from 'src/config/constant';
+import { PassportModule } from '@nestjs/passport';
 
 @Module({
 	imports: [

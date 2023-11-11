@@ -29,13 +29,6 @@ export class AuthService {
 
 		const tokens = await this.issueTokenPair(String(user._id));
 
-		//
-		const payload = await this.jwtService.verifyAsync(tokens.accessToken, {
-			secret: jwtConstants.secret,
-		});
-		log(payload);
-		//
-
 		return {
 			user: this.returnUserFields(user),
 			...tokens,
@@ -99,11 +92,11 @@ export class AuthService {
 		const data = { _id: userId };
 
 		const refreshToken = await this.jwtService.signAsync(data, {
-			expiresIn: '15d',
+			expiresIn: '60000s',
 		});
 
 		const accessToken = await this.jwtService.signAsync(data, {
-			expiresIn: '1h',
+			expiresIn: '15000s',
 		});
 
 		return { accessToken, refreshToken };
