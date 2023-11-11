@@ -11,17 +11,13 @@ import { JwtService } from '@nestjs/jwt';
 import { UserModel } from 'src/user/user.model';
 import { AuthDto } from './dto/auth.dto';
 import { RefreshTokenDto } from './dto/refreshToken.dto';
-import { log } from 'console';
-import { ConfigService } from '@nestjs/config';
-import { jwtConstants } from 'src/config/constant';
 
 @Injectable()
 export class AuthService {
 	constructor(
 		@InjectModel(UserModel)
 		private readonly UserModel: ModelType<UserModel>,
-		private readonly jwtService: JwtService,
-		private readonly configService: ConfigService
+		private readonly jwtService: JwtService
 	) {}
 
 	async login(dto: AuthDto) {
@@ -62,15 +58,16 @@ export class AuthService {
 
 		const solt = await genSalt(10);
 
-		const newUser = await new this.UserModel({
+		const newUser = new this.UserModel({
 			email: dto.email,
 			password: await hash(dto.password, solt),
 		});
+		const user = await newUser.save();
 
-		const tokens = await this.issueTokenPair(String(newUser._id));
+		const tokens = await this.issueTokenPair(String(user._id));
 
 		return {
-			user: this.returnUserFields(newUser),
+			user: this.returnUserFields(user),
 			...tokens,
 		};
 	}
@@ -92,11 +89,11 @@ export class AuthService {
 		const data = { _id: userId };
 
 		const refreshToken = await this.jwtService.signAsync(data, {
-			expiresIn: '60000s',
+			expiresIn: '1d',
 		});
 
 		const accessToken = await this.jwtService.signAsync(data, {
-			expiresIn: '15000s',
+			expiresIn: '30m',
 		});
 
 		return { accessToken, refreshToken };
